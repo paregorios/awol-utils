@@ -34,6 +34,11 @@ def main():
         try:
             l.debug("   trying to get text content of the 'title' element")
             titleText = str(root.find("{http://www.w3.org/2005/Atom}title").text) #Get the text from the title element
+        except UnicodeEncodeError, e:
+            print '******ERROR******'
+            print e
+            print '*****************'
+        else:
             # If the title text contains ':', fetch the string before ':'
             if ":" in titleText:
                 l.debug("   found ':' in title content; trying to split")
@@ -41,10 +46,6 @@ def main():
                 print 'SUCCESS-- '+ tag + ' - taken from - ' + '\"'+titleText+'\"'
                 if not uniqueTagList.__contains__(tag):
                     uniqueTagList.append(tag)
-        except UnicodeEncodeError, e:
-            print '******ERROR******'
-            print e
-            print '*****************'
     print '******UNIQUE LIST******'
     l.debug('printing unique tag list')
     for item in uniqueTagList:
