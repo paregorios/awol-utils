@@ -6,10 +6,11 @@ import os
 import sys
 import traceback
 import xml.etree.ElementTree as xmlParser
+import codecs
 
 SCRIPT_DESC = 'parse unique colon-delimited prefixes out of Ancient World Online blog XML dump files (Atom format)'
 DEFAULTINPATH='D:\\GitHub\\awol-backup\\'
-DEFAULTOUTPATH='.\\'
+DEFAULTOUTPATH='.\\parse.log'
 
 def main():
     """ 
@@ -17,12 +18,15 @@ def main():
     """
 
     global args
+    if args.outpath:
+        DEFAULTOUTPATH = args.outpath
     if args.verbose:
-        l.basicConfig(level=l.DEBUG)
+        l.basicConfig(filename=DEFAULTOUTPATH, level=l.DEBUG)
     else:
-        l.basicConfig(level=l.WARNING)
+        l.basicConfig(filename=DEFAULTOUTPATH, level=l.INFO)
 
     uniqueTagList = []
+    tagListFile = codecs.open(DEFAULTOUTPATH, 'a', 'utf-8')
     # Gets the list of all the *-atom.xmls from the awol-backup directory
     atomXMLsPath = args.inpath
     xmlList = glob.glob(atomXMLsPath + '*-atom.xml')
@@ -32,24 +36,23 @@ def main():
         doc=xmlParser.parse(item) #Parse each of the atom.xml
         root = doc.getroot()            
         try:
-            l.debug("   trying to get text content of the 'title' element")
-            titleText = str(root.find("{http://www.w3.org/2005/Atom}title").text) #Get the text from the title element
+            l.debug("trying to get text content of the 'title' element")
+            titleText = unicode(root.find("{http://www.w3.org/2005/Atom}title").text) #Get the text from the title element
         except UnicodeEncodeError, e:
-            print '******ERROR******'
-            print e
-            print '*****************'
+            l.debug("******ERROR******")
+            l.debug(e)
+            l.debug("*****************")
         else:
             # If the title text contains ':', fetch the string before ':'
             if ":" in titleText:
                 l.debug("   found ':' in title content; trying to split")
                 tag = titleText.split(':')[0]
-                print 'SUCCESS-- '+ tag + ' - taken from - ' + '\"'+titleText+'\"'
+                l.info("SUCCESS-- %s - taken from - \"%s\"" % (tag, titleText))
                 if not uniqueTagList.__contains__(tag):
                     uniqueTagList.append(tag)
-    print '******UNIQUE LIST******'
-    l.debug('printing unique tag list')
-    for item in uniqueTagList:
-        print 'Item: '+ item
+    for uniqueTag in uniqueTagList:
+        tagListFile.write(unicode(uniqueTag))
+        tagListFile.write("\n")
 
 if __name__ == "__main__":
     try:
@@ -65,7 +68,7 @@ if __name__ == "__main__":
     except SystemExit, e: # sys.exit()
         raise e
     except Exception, e:
-        print "ERROR, UNEXPECTED EXCEPTION"
-        print str(e)
+        l.debug("ERROR, UNEXPECTED EXCEPTION")
+        l.debug(e)
         traceback.print_exc()
         os._exit(1)
